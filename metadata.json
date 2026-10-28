@@ -1,0 +1,6 @@
+{
+  "name": "Àlgebra Pas a Pas - Matemàtiques 3r ESO",
+  "description": "Plataforma adaptativa d'aprenentatge d'equacions i problemes per a alumnes de 3r d'ESO a Catalunya, amb feedback immediat i explicació pas a pas d'errors.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

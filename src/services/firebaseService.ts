@@ -21,6 +21,15 @@ import { StudentProfile, StudentGroup, FirebaseClientConfig, StudentSession } fr
 const FIREBASE_CONFIG_STORAGE_KEY = 'algebra_3reso_firebase_config';
 const LOCAL_STUDENTS_STORAGE_KEY = 'algebra_3reso_local_students';
 
+export const DEFAULT_FIREBASE_CONFIG: FirebaseClientConfig = {
+  apiKey: 'AIzaSyAEPOi5e2NLUBjSjzInXnZHaS3T7gpeQys',
+  authDomain: 'r-eso-repas-equacions.firebaseapp.com',
+  projectId: 'r-eso-repas-equacions',
+  storageBucket: 'r-eso-repas-equacions.firebasestorage.app',
+  messagingSenderId: '1032818830661',
+  appId: '1:1032818830661:web:ab107b24fe6d046b8da22c',
+};
+
 class FirebaseService {
   private app: FirebaseApp | null = null;
   private db: Firestore | null = null;
@@ -36,9 +45,13 @@ class FirebaseService {
       if (savedConfig) {
         const config: FirebaseClientConfig = JSON.parse(savedConfig);
         this.initializeWithConfig(config);
+      } else {
+        // Connect automatically to the user's preconfigured Firebase project
+        this.initializeWithConfig(DEFAULT_FIREBASE_CONFIG);
       }
     } catch (e) {
-      console.warn('No s\'ha pogut carregar la configuració prèvia de Firebase:', e);
+      console.warn('Error carregant configuració de Firebase, usant la predeterminada:', e);
+      this.initializeWithConfig(DEFAULT_FIREBASE_CONFIG);
     }
   }
 

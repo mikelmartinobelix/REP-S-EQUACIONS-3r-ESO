@@ -5,7 +5,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { StudentProfile, StudentGroup, FirebaseClientConfig } from '../types/student';
-import { firebaseService } from '../services/firebaseService';
+import { firebaseService, DEFAULT_FIREBASE_CONFIG } from '../services/firebaseService';
 import {
   X,
   Lock,
@@ -21,6 +21,7 @@ import {
   Flame,
   AlertCircle,
   Check,
+  ShieldAlert,
 } from 'lucide-react';
 
 interface TeacherDashboardModalProps {
@@ -41,11 +42,11 @@ export const TeacherDashboardModal: React.FC<TeacherDashboardModalProps> = ({ is
   // Tab: 'overview' | 'firebase'
   const [activeTab, setActiveTab] = useState<'overview' | 'firebase'>('overview');
 
-  // Firebase config state
-  const [apiKey, setApiKey] = useState('');
-  const [projectId, setProjectId] = useState('');
-  const [appId, setAppId] = useState('');
-  const [authDomain, setAuthDomain] = useState('');
+  // Firebase config state - pre-filled with the user's project
+  const [apiKey, setApiKey] = useState(DEFAULT_FIREBASE_CONFIG.apiKey);
+  const [projectId, setProjectId] = useState(DEFAULT_FIREBASE_CONFIG.projectId);
+  const [appId, setAppId] = useState(DEFAULT_FIREBASE_CONFIG.appId || '');
+  const [authDomain, setAuthDomain] = useState(DEFAULT_FIREBASE_CONFIG.authDomain || '');
   const [firebaseStatusMessage, setFirebaseStatusMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [isTestingFirebase, setIsTestingFirebase] = useState(false);
 
@@ -54,10 +55,10 @@ export const TeacherDashboardModal: React.FC<TeacherDashboardModalProps> = ({ is
       loadStudents();
       const stored = firebaseService.getStoredConfig();
       if (stored) {
-        setApiKey(stored.apiKey || '');
-        setProjectId(stored.projectId || '');
-        setAppId(stored.appId || '');
-        setAuthDomain(stored.authDomain || '');
+        setApiKey(stored.apiKey || DEFAULT_FIREBASE_CONFIG.apiKey);
+        setProjectId(stored.projectId || DEFAULT_FIREBASE_CONFIG.projectId);
+        setAppId(stored.appId || DEFAULT_FIREBASE_CONFIG.appId || '');
+        setAuthDomain(stored.authDomain || DEFAULT_FIREBASE_CONFIG.authDomain || '');
       }
     }
   }, [isOpen, selectedGroup]);
@@ -531,6 +532,27 @@ export const TeacherDashboardModal: React.FC<TeacherDashboardModalProps> = ({ is
                       </button>
                     </div>
                   </form>
+
+                  {/* Firestore Security Rules Reminder */}
+                  <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-xs space-y-2">
+                    <h5 className="font-semibold text-slate-800 flex items-center gap-1.5">
+                      <ShieldAlert className="w-4 h-4 text-amber-500" />
+                      Regles de seguretat de Firestore (important a la consola de Firebase)
+                    </h5>
+                    <p className="text-slate-600 leading-relaxed">
+                      A la consola de Firebase (pestanya <strong>Firestore Database &gt; Reglas / Rules</strong>), assegura't que la col·lecció <code className="font-mono font-bold text-indigo-700">alumnat_3reso</code> permet lectura i escriptura:
+                    </p>
+                    <pre className="p-3 bg-slate-900 text-emerald-400 font-mono text-[11px] rounded-lg overflow-x-auto">
+{`rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /alumnat_3reso/{studentId} {
+      allow read, write: if true;
+    }
+  }
+}`}
+                    </pre>
+                  </div>
                 </div>
               )}
             </div>

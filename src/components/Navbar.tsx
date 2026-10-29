@@ -1,5 +1,5 @@
-import React from 'react';
-import { Volume2, VolumeX, BookOpen, Scale, Sparkles, User, ShieldCheck } from 'lucide-react';
+import React, { useState } from 'react';
+import { Volume2, VolumeX, BookOpen, Scale, Sparkles, User, ShieldCheck, Share2, Check } from 'lucide-react';
 import { EquationDifficulty } from '../types/math';
 import { StudentGroup } from '../types/student';
 
@@ -32,6 +32,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onChangeStudent,
   streak,
 }) => {
+  const [isCopied, setIsCopied] = useState(false);
   const groupLabel = studentGroup === 'repas' ? 'Repàs' : `3r ${studentGroup}`;
 
   return (
@@ -100,6 +101,30 @@ export const Navbar: React.FC<NavbarProps> = ({
             >
               <ShieldCheck className="w-3.5 h-3.5 text-indigo-600" />
               <span className="hidden sm:inline">Docent</span>
+            </button>
+
+            <button
+              onClick={() => {
+                if (typeof window !== 'undefined') {
+                  navigator.clipboard.writeText(window.location.origin);
+                  setIsCopied(true);
+                  setTimeout(() => setIsCopied(false), 2500);
+                }
+              }}
+              className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-lg transition-colors cursor-pointer"
+              title="Copiar enllaç per compartir l'aplicació amb l'alumnat"
+            >
+              {isCopied ? (
+                <>
+                  <Check className="w-3.5 h-3.5 text-emerald-600" />
+                  <span className="text-emerald-700 font-semibold">Copiat!</span>
+                </>
+              ) : (
+                <>
+                  <Share2 className="w-3.5 h-3.5 text-indigo-600" />
+                  <span className="hidden sm:inline">Compartir</span>
+                </>
+              )}
             </button>
 
             <button

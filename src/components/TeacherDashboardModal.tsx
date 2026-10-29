@@ -22,6 +22,7 @@ import {
   AlertCircle,
   Check,
   ShieldAlert,
+  Share2,
 } from 'lucide-react';
 
 interface TeacherDashboardModalProps {
@@ -38,6 +39,7 @@ export const TeacherDashboardModal: React.FC<TeacherDashboardModalProps> = ({ is
   const [selectedGroup, setSelectedGroup] = useState<StudentGroup | 'all'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [copiedLink, setCopiedLink] = useState(false);
 
   // Tab: 'overview' | 'firebase'
   const [activeTab, setActiveTab] = useState<'overview' | 'firebase'>('overview');
@@ -282,14 +284,40 @@ export const TeacherDashboardModal: React.FC<TeacherDashboardModalProps> = ({ is
                       ))}
                     </div>
 
-                    <button
-                      onClick={handleExportCSV}
-                      disabled={filteredStudents.length === 0}
-                      className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 rounded-lg transition-colors shadow-2xs disabled:opacity-50 cursor-pointer"
-                    >
-                      <Download className="w-3.5 h-3.5" />
-                      Descarregar informe CSV
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => {
+                          if (typeof window !== 'undefined') {
+                            navigator.clipboard.writeText(window.location.origin);
+                            setCopiedLink(true);
+                            setTimeout(() => setCopiedLink(false), 2500);
+                          }
+                        }}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-indigo-700 bg-indigo-50 border border-indigo-200 hover:bg-indigo-100 rounded-lg transition-colors shadow-2xs cursor-pointer"
+                        title="Copiar enllaç públic de l'aplicació per a l'alumnat"
+                      >
+                        {copiedLink ? (
+                          <>
+                            <Check className="w-3.5 h-3.5 text-emerald-600" />
+                            <span className="text-emerald-700">Enllaç copiat!</span>
+                          </>
+                        ) : (
+                          <>
+                            <Share2 className="w-3.5 h-3.5" />
+                            <span>Copiar enllaç alumnat</span>
+                          </>
+                        )}
+                      </button>
+
+                      <button
+                        onClick={handleExportCSV}
+                        disabled={filteredStudents.length === 0}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 rounded-lg transition-colors shadow-2xs disabled:opacity-50 cursor-pointer"
+                      >
+                        <Download className="w-3.5 h-3.5" />
+                        Descarregar CSV
+                      </button>
+                    </div>
                   </div>
 
                   {/* Summary Metric Cards */}

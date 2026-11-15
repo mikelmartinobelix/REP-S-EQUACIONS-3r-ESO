@@ -3,13 +3,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { StudentGroup, StudentProfile } from '../types/student';
-import { Users, User, ArrowRight, Sparkles } from 'lucide-react';
+import { Users, User, ArrowRight, Lock, Eye, EyeOff, AlertCircle } from 'lucide-react';
+
+export const STUDENT_ACCESS_PASSWORD = 'Macitec3';
 
 interface StudentLoginModalProps {
   isOpen: boolean;
   currentStudent: StudentProfile | null;
+  hasAccessVerified?: boolean;
   onSaveStudent: (name: string, group: StudentGroup) => void;
   onClose: () => void;
   canCloseWithoutSaving?: boolean;
@@ -18,18 +21,37 @@ interface StudentLoginModalProps {
 export const StudentLoginModal: React.FC<StudentLoginModalProps> = ({
   isOpen,
   currentStudent,
+  hasAccessVerified = false,
   onSaveStudent,
   onClose,
   canCloseWithoutSaving = false,
 }) => {
   const [name, setName] = useState(currentStudent?.name || '');
   const [group, setGroup] = useState<StudentGroup>(currentStudent?.group || 'A');
+  const [password, setPassword] = useState(hasAccessVerified ? STUDENT_ACCESS_PASSWORD : '');
+  const [showPassword, setShowPassword] = useState(false);
+  const [passwordError, setPasswordError] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      setName(currentStudent?.name || '');
+      setGroup(currentStudent?.group || 'A');
+      setPassword(hasAccessVerified ? STUDENT_ACCESS_PASSWORD : '');
+      setPasswordError(false);
+    }
+  }, [isOpen, currentStudent, hasAccessVerified]);
 
   if (!isOpen) return null;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return;
+
+    if (!hasAccessVerified && password.trim() !== STUDENT_ACCESS_PASSWORD) {
+      setPasswordError(true);
+      return;
+    }
+
     onSaveStudent(name.trim(), group);
   };
 
@@ -50,12 +72,12 @@ export const StudentLoginModal: React.FC<StudentLoginModalProps> = ({
           </div>
           <h2 className="text-xl font-bold">Benvingut/da a Àlgebra Pas a Pas!</h2>
           <p className="text-indigo-100 text-xs mt-1">
-            Introdueix el teu nom i tria el teu grup per començar a practicar
+            Introdueix el teu nom, grup i la contrasenya de classe per començar
           </p>
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-5">
+        <form onSubmit={handleSubmit} className="p-6 space-y-4">
           <div className="space-y-1.5">
             <label className="text-xs font-semibold text-slate-700 flex items-center gap-1.5">
               <User className="w-3.5 h-3.5 text-indigo-600" />
@@ -71,6 +93,46 @@ export const StudentLoginModal: React.FC<StudentLoginModalProps> = ({
               autoFocus
             />
           </div>
+
+          {!hasAccessVerified && (
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-slate-700 flex items-center gap-1.5">
+                <Lock className="w-3.5 h-3.5 text-indigo-600" />
+                Contrasenya d'accés de l'alumnat
+              </label>
+              <div className="relative">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  required
+                  value={password}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    setPasswordError(false);
+                  }}
+                  placeholder="Escriu la contrasenya de classe..."
+                  className={`w-full pl-3.5 pr-10 py-2.5 rounded-xl border focus:outline-none focus:ring-2 text-slate-900 text-sm bg-slate-50 placeholder:text-slate-400 ${
+                    passwordError
+                      ? 'border-rose-400 focus:ring-rose-500'
+                      : 'border-slate-300 focus:ring-indigo-500'
+                  }`}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((prev) => !prev)}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-700 cursor-pointer"
+                  aria-label={showPassword ? 'Amagar contrasenya' : 'Mostrar contrasenya'}
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+              {passwordError && (
+                <p className="text-xs text-rose-600 font-medium flex items-center gap-1 pt-0.5">
+                  <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                  Contrasenya incorrecta. Demana-la al teu professor/a.
+                </p>
+              )}
+            </div>
+          )}
 
           <div className="space-y-2">
             <label className="text-xs font-semibold text-slate-700 flex items-center gap-1.5">
@@ -105,14 +167,14 @@ export const StudentLoginModal: React.FC<StudentLoginModalProps> = ({
               <button
                 type="button"
                 onClick={onClose}
-                className="flex-1 py-2.5 px-4 text-xs font-medium text-slate-600 hover:bg-slate-100 rounded-xl border border-slate-200 transition-colors"
+                className="flex-1 py-2.5 px-4 text-xs font-medium text-slate-600 hover:bg-slate-100 rounded-xl border border-slate-200 transition-colors cursor-pointer"
               >
                 Cancel·lar
               </button>
             )}
             <button
               type="submit"
-              disabled={!name.trim()}
+              disabled={!name.trim() || (!hasAccessVerified && !password.trim())}
               className="flex-1 py-2.5 px-4 bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-200 disabled:text-slate-400 text-white font-medium text-xs rounded-xl shadow-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
             >
               Començar a practicar

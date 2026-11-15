@@ -34,6 +34,7 @@ import { Sparkles, RefreshCw, Layers } from 'lucide-react';
 
 const STATS_STORAGE_KEY = 'algebra_3reso_stats_v1';
 const CURRENT_STUDENT_STORAGE_KEY = 'algebra_3reso_current_student';
+const STUDENT_ACCESS_STORAGE_KEY = 'algebra_3reso_student_access_v1';
 
 const DEFAULT_STATS: UserStats = {
   totalSolved: 0,
@@ -82,6 +83,14 @@ export default function App() {
     return null;
   });
 
+  const [hasStudentAccess, setHasStudentAccess] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem(STUDENT_ACCESS_STORAGE_KEY) === 'granted';
+    } catch {
+      return false;
+    }
+  });
+
   const [isStudentLoginOpen, setIsStudentLoginOpen] = useState(false);
   const [isTeacherDashboardOpen, setIsTeacherDashboardOpen] = useState(false);
   const [isCheatSheetOpen, setIsCheatSheetOpen] = useState(false);
@@ -108,12 +117,12 @@ export default function App() {
   // Recommendation message if student is progressing
   const [recommendation, setRecommendation] = useState<string | null>(null);
 
-  // Check if first-time student prompt needed
+  // Check if first-time student prompt or password verification needed
   useEffect(() => {
-    if (!currentStudent) {
+    if (!currentStudent || !hasStudentAccess) {
       setIsStudentLoginOpen(true);
     }
-  }, []);
+  }, [currentStudent, hasStudentAccess]);
 
   // Sync stats to localStorage
   useEffect(() => {
@@ -154,7 +163,9 @@ export default function App() {
     };
 
     setCurrentStudent(profile);
+    setHasStudentAccess(true);
     localStorage.setItem(CURRENT_STUDENT_STORAGE_KEY, JSON.stringify(profile));
+    localStorage.setItem(STUDENT_ACCESS_STORAGE_KEY, 'granted');
     firebaseService.syncStudentProfile(profile);
     setIsStudentLoginOpen(false);
   };
@@ -472,9 +483,10 @@ export default function App() {
       <StudentLoginModal
         isOpen={isStudentLoginOpen}
         currentStudent={currentStudent}
+        hasAccessVerified={hasStudentAccess}
         onSaveStudent={handleSaveStudent}
         onClose={() => setIsStudentLoginOpen(false)}
-        canCloseWithoutSaving={currentStudent !== null}
+        canCloseWithoutSaving={currentStudent !== null && hasStudentAccess}
       />
 
       <TeacherDashboardModal

@@ -614,6 +614,98 @@ export const CURRICULUM_EQUATIONS: Record<EquationDifficulty, EquationExercise[]
         'Restem 4 a cada membre de l\'equació: x = 15 - 4 = 11.',
       ],
     },
+    {
+      id: 'n4-3',
+      level: 'nivell-4',
+      rawEquation: '(2x - 4) / 3 = 4',
+      solution: 8,
+      steps: [
+        {
+          instruction: 'Com que el 3 divideix tot el numerador, multipliquem cada membre de l\'equació per 3:',
+          expectedExpression: '2x - 4 = 4 * 3',
+          acceptedForms: ['2x-4=4*3', '2x-4=12'],
+          explanation: 'Multipliquem ambdós membres per 3: el denominador desapareix a l\'esquerra i queda 4 · 3 a la dreta.',
+        },
+        {
+          instruction: 'Calcula 4 · 3 al membre dret:',
+          expectedExpression: '2x - 4 = 12',
+          acceptedForms: ['2x-4=12'],
+          explanation: 'Tenim 2x - 4 = 12.',
+        },
+        {
+          instruction: 'Per contrarestar el -4, sumem 4 a cada membre de l\'equació:',
+          expectedExpression: '2x = 16',
+          acceptedForms: ['2x=16', '2x=12+4'],
+          explanation: 'Sumem 4 a cada membre de la balança: 2x = 12 + 4 = 16.',
+        },
+        {
+          instruction: 'Dividim cada membre de l\'equació entre 2 per trobar x:',
+          expectedExpression: 'x = 8',
+          acceptedForms: ['x=8', '8'],
+          explanation: '16 / 2 = 8. Comprovació: (2·8 - 4) / 3 = 12 / 3 = 4.',
+        },
+      ],
+      explanationSummary: [
+        'Multipliquem cada membre per 3: 2x - 4 = 12.',
+        'Sumem 4 a cada membre de la balança: 2x = 16.',
+        'Dividim cada membre entre 2: x = 8.',
+      ],
+    },
+    {
+      id: 'n4-4',
+      level: 'nivell-4',
+      rawEquation: '(x + 1) / 2 + 3 = 7',
+      solution: 7,
+      steps: [
+        {
+          instruction: 'Primer, per contrarestar el +3 fora de la fracció, restem 3 a cada membre de l\'equació:',
+          expectedExpression: '(x + 1) / 2 = 4',
+          acceptedForms: ['(x+1)/2=4', '(x+1)/2=7-3'],
+          explanation: 'Restem 3 a cada membre de la balança: (x + 1) / 2 = 7 - 3 = 4.',
+        },
+        {
+          instruction: 'Ara multipliquem cada membre de l\'equació per 2 per eliminar el denominador:',
+          expectedExpression: 'x + 1 = 8',
+          acceptedForms: ['x+1=8', 'x+1=4*2'],
+          explanation: 'Multipliquem ambdós membres per 2: x + 1 = 4 · 2 = 8.',
+        },
+        {
+          instruction: 'Finalment, restem 1 a cada membre de l\'equació:',
+          expectedExpression: 'x = 7',
+          acceptedForms: ['x=7', '7'],
+          explanation: 'Restem 1 a cada membre: x = 8 - 1 = 7. Fantàstic!',
+        },
+      ],
+      explanationSummary: [
+        'Restem 3 a cada membre: (x + 1) / 2 = 4.',
+        'Multipliquem cada membre per 2: x + 1 = 8.',
+        'Restem 1 a cada membre: x = 7.',
+      ],
+    },
+    {
+      id: 'n4-5',
+      level: 'nivell-4',
+      rawEquation: '3x / 4 = 6',
+      solution: 8,
+      steps: [
+        {
+          instruction: 'El 4 divideix el 3x. Multipliquem cada membre de l\'equació per 4 per equilibrar la balança:',
+          expectedExpression: '3x = 24',
+          acceptedForms: ['3x=24', '3x=6*4'],
+          explanation: 'Multipliquem ambdós membres per 4: 3x = 6 · 4 = 24.',
+        },
+        {
+          instruction: 'Dividim cada membre de l\'equació entre 3 per aïllar la x:',
+          expectedExpression: 'x = 8',
+          acceptedForms: ['x=8', '8', 'x=24/3'],
+          explanation: 'Dividim cada membre entre 3: x = 24 / 3 = 8.',
+        },
+      ],
+      explanationSummary: [
+        'Multipliquem cada membre per 4: 3x = 24.',
+        'Dividim cada membre entre 3: x = 8.',
+      ],
+    },
   ],
 
   problemes: [],
@@ -708,6 +800,79 @@ export function generateRandomEquation(level: EquationDifficulty): EquationExerc
         `Dividim cada membre entre ${a}: x = ${sol}`,
       ],
     };
+  } else if (level === 'nivell-4') {
+    const useWholeNumerator = Math.random() > 0.5;
+    const d = Math.floor(Math.random() * 3) + 2; // 2..4
+    if (useWholeNumerator) {
+      // (x + b) / d = c
+      const c = Math.floor(Math.random() * 5) + 2; // 2..6
+      const b = (Math.floor(Math.random() * 5) + 1) * (Math.random() > 0.4 ? 1 : -1);
+      const sol = c * d - b;
+      const sign = b >= 0 ? `+ ${b}` : `- ${Math.abs(b)}`;
+      const actionVerb = b >= 0 ? `restem ${b}` : `sumem ${Math.abs(b)}`;
+      const rawEquation = `(x ${sign}) / ${d} = ${c}`;
+
+      return {
+        id: `rand-n4-${seed}`,
+        level: 'nivell-4',
+        rawEquation,
+        solution: sol,
+        steps: [
+          {
+            instruction: `Multipliquem cada membre de l'equació per ${d} per eliminar el denominador:`,
+            expectedExpression: `x ${sign} = ${c * d}`,
+            acceptedForms: [`x${sign.replace(/\s+/g, '')}=${c * d}`, `x${sign.replace(/\s+/g, '')}=${c}*${d}`],
+            explanation: `Multipliquem tots dos costats de la balança per ${d}: x ${sign} = ${c} · ${d} = ${c * d}.`,
+          },
+          {
+            instruction: `Per equilibrar la balança, ${actionVerb} a cada membre de l'equació:`,
+            expectedExpression: `x = ${sol}`,
+            acceptedForms: [`x=${sol}`, `${sol}`],
+            explanation: `${actionVerb} a tots dos membres: x = ${sol}.`,
+          },
+        ],
+        explanationSummary: [
+          `Equació: ${rawEquation}`,
+          `Multipliquem cada membre per ${d}: x ${sign} = ${c * d}`,
+          `${actionVerb} a cada membre: x = ${sol}`,
+        ],
+      };
+    } else {
+      // x / d + b = c
+      const k = Math.floor(Math.random() * 5) + 2; // 2..6 (so sol = k * d)
+      const sol = k * d;
+      const b = (Math.floor(Math.random() * 5) + 1) * (Math.random() > 0.4 ? 1 : -1);
+      const c = k + b;
+      const sign = b >= 0 ? `+ ${b}` : `- ${Math.abs(b)}`;
+      const actionVerb = b >= 0 ? `restem ${b}` : `sumem ${Math.abs(b)}`;
+      const rawEquation = `x / ${d} ${sign} = ${c}`;
+
+      return {
+        id: `rand-n4-${seed}`,
+        level: 'nivell-4',
+        rawEquation,
+        solution: sol,
+        steps: [
+          {
+            instruction: `Primer, per contrarestar el ${sign}, ${actionVerb} a cada membre de l'equació:`,
+            expectedExpression: `x / ${d} = ${k}`,
+            acceptedForms: [`x/${d}=${k}`],
+            explanation: `${actionVerb} a cada membre de la balança: x / ${d} = ${k}.`,
+          },
+          {
+            instruction: `Multipliquem cada membre de l'equació per ${d} per aïllar la x:`,
+            expectedExpression: `x = ${sol}`,
+            acceptedForms: [`x=${sol}`, `${sol}`, `x=${k}*${d}`],
+            explanation: `Multipliquem tots dos membres per ${d}: x = ${k} · ${d} = ${sol}.`,
+          },
+        ],
+        explanationSummary: [
+          `Equació: ${rawEquation}`,
+          `${actionVerb} a cada membre: x / ${d} = ${k}`,
+          `Multipliquem cada membre per ${d}: x = ${sol}`,
+        ],
+      };
+    }
   }
 
   // Fallback to pre-built equation

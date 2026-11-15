@@ -3,18 +3,20 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState } from 'react';
-import { EquationExercise } from '../types/math';
-import { diagnoseEquationStep, splitEquation, evalLinearSide } from '../utils/algebraEngine';
+import React, { useState, useEffect, useRef } from 'react';
+import { EquationExercise, ErrorType } from '../types/math';
+import { diagnoseEquationStep, splitEquation } from '../utils/algebraEngine';
 import { MathKeyboard } from './MathKeyboard';
+import { MathExpression } from './MathExpression';
 import { soundEffects } from '../utils/soundEffects';
 import confetti from 'canvas-confetti';
 import { CheckCircle2, AlertCircle, Sparkles, Eye, ArrowRight, Plus, Trash2, HelpCircle } from 'lucide-react';
 import { InteractiveBalance } from './InteractiveBalance';
+import { CompletionMeta } from './StepByStepSolver';
 
 interface AutonomousPracticeProps {
   exercise: EquationExercise;
-  onCompleted: (isFirstTry: boolean) => void;
+  onCompleted: (isFirstTry: boolean, meta?: CompletionMeta) => void;
   onNextExercise: () => void;
 }
 
@@ -39,6 +41,18 @@ export const AutonomousPractice: React.FC<AutonomousPracticeProps> = ({
   const [showBalance, setShowBalance] = useState(false);
   const [isSolved, setIsSolved] = useState(false);
   const [hadError, setHadError] = useState(false);
+  const [errorTypes, setErrorTypes] = useState<ErrorType[]>([]);
+  const startTimeRef = useRef<number>(Date.now());
+
+  useEffect(() => {
+    setSteps([{ id: String(Date.now()), expression: '', status: 'pending' }]);
+    setActiveStepIndex(0);
+    setShowFullSolution(false);
+    setIsSolved(false);
+    setHadError(false);
+    setErrorTypes([]);
+    startTimeRef.current = Date.now();
+  }, [exercise.id]);
 
   const handleUpdateStepText = (index: number, val: string) => {
     setSteps((prev) => {
@@ -70,7 +84,12 @@ export const AutonomousPractice: React.FC<AutonomousPracticeProps> = ({
       setIsSolved(true);
       soundEffects.playCelebration();
       confetti({ particleCount: 60, spread: 70, origin: { y: 0.7 } });
-      onCompleted(!hadError);
+      const elapsedSeconds = Math.max(1, Math.round((Date.now() - startTimeRef.current) / 1000));
+      onCompleted(!hadError, {
+        timeSpentSeconds: elapsedSeconds,
+        mistakesCount: errorTypes.length,
+        errorTypes,
+      });
       return;
     }
 
@@ -103,6 +122,7 @@ export const AutonomousPractice: React.FC<AutonomousPracticeProps> = ({
     } else {
       soundEffects.playGentleRetry();
       setHadError(true);
+      setErrorTypes((prev) => [...prev, diag.errorType || 'UNKNOWN']);
       setSteps((prev) => {
         const copy = [...prev];
         copy[index] = {
@@ -169,8 +189,8 @@ export const AutonomousPractice: React.FC<AutonomousPracticeProps> = ({
 
         <div className="text-center py-4 bg-slate-50 rounded-xl border border-slate-100">
           <p className="text-xs text-slate-500 font-medium mb-1">Resol aquesta equació:</p>
-          <div className="font-mono text-2xl md:text-3xl font-bold text-slate-900 tracking-wide">
-            {exercise.rawEquation}
+          <div className="font-bold text-slate-900 tracking-wide">
+            <MathExpression expression={exercise.rawEquation} size="lg" />
           </div>
         </div>
 
@@ -242,6 +262,13 @@ export const AutonomousPractice: React.FC<AutonomousPracticeProps> = ({
                     </button>
                   )}
                 </div>
+
+                {st.expression.includes('/') && (
+                  <div className="mt-2 ml-8 flex items-center gap-2 px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-600">
+                    <span className="font-medium shrink-0">Format fracció:</span>
+                    <MathExpression expression={st.expression} size="sm" className="font-bold text-slate-900" />
+                  </div>
+                )}
 
                 {/* Line feedback */}
                 {st.feedbackText && (

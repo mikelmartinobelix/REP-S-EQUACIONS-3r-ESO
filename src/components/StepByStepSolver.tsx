@@ -4,17 +4,24 @@
  */
 
 import React, { useState, useRef, useEffect } from 'react';
-import { EquationExercise, DiagnosticFeedback } from '../types/math';
+import { EquationExercise, DiagnosticFeedback, ErrorType } from '../types/math';
 import { diagnoseEquationStep } from '../utils/algebraEngine';
 import { MathKeyboard } from './MathKeyboard';
+import { MathExpression } from './MathExpression';
 import { soundEffects } from '../utils/soundEffects';
 import confetti from 'canvas-confetti';
 import { CheckCircle2, AlertCircle, HelpCircle, ArrowRight, Lightbulb, Sparkles, Keyboard, Scale } from 'lucide-react';
 import { InteractiveBalance } from './InteractiveBalance';
 
+export interface CompletionMeta {
+  timeSpentSeconds: number;
+  mistakesCount: number;
+  errorTypes: ErrorType[];
+}
+
 interface StepByStepSolverProps {
   exercise: EquationExercise;
-  onCompleted: (isFirstTry: boolean) => void;
+  onCompleted: (isFirstTry: boolean, meta?: CompletionMeta) => void;
   onNextExercise: () => void;
 }
 
@@ -34,8 +41,10 @@ export const StepByStepSolver: React.FC<StepByStepSolverProps> = ({
   const [completedStepsHistory, setCompletedStepsHistory] = useState<
     { instruction: string; result: string; explanation: string }[]
   >([]);
+  const [errorTypes, setErrorTypes] = useState<ErrorType[]>([]);
 
   const inputRef = useRef<HTMLInputElement>(null);
+  const startTimeRef = useRef<number>(Date.now());
 
   useEffect(() => {
     // Reset when exercise changes
@@ -46,6 +55,8 @@ export const StepByStepSolver: React.FC<StepByStepSolverProps> = ({
     setHadMistakeInCurrentExercise(false);
     setIsFinished(false);
     setCompletedStepsHistory([]);
+    setErrorTypes([]);
+    startTimeRef.current = Date.now();
   }, [exercise.id]);
 
   const currentStep = exercise.steps[currentStepIndex];
@@ -89,7 +100,12 @@ export const StepByStepSolver: React.FC<StepByStepSolverProps> = ({
           spread: 60,
           origin: { y: 0.7 },
         });
-        onCompleted(!hadMistakeInCurrentExercise);
+        const elapsedSeconds = Math.max(1, Math.round((Date.now() - startTimeRef.current) / 1000));
+        onCompleted(!hadMistakeInCurrentExercise, {
+          timeSpentSeconds: elapsedSeconds,
+          mistakesCount: errorTypes.length,
+          errorTypes,
+        });
       } else {
         setTimeout(() => {
           setCurrentStepIndex((prev) => prev + 1);
@@ -102,6 +118,7 @@ export const StepByStepSolver: React.FC<StepByStepSolverProps> = ({
     } else {
       soundEffects.playGentleRetry();
       setHadMistakeInCurrentExercise(true);
+      setErrorTypes((prev) => [...prev, diag.errorType || 'UNKNOWN']);
     }
   };
 
@@ -160,8 +177,8 @@ export const StepByStepSolver: React.FC<StepByStepSolverProps> = ({
         {/* Big formatted equation */}
         <div className="text-center py-4 bg-slate-50 rounded-xl border border-slate-100">
           <p className="text-xs text-slate-500 font-medium mb-1">Equació inicial:</p>
-          <div className="font-mono text-2xl md:text-3xl font-bold text-slate-900 tracking-wide">
-            {exercise.rawEquation}
+          <div className="font-bold text-slate-900 tracking-wide">
+            <MathExpression expression={exercise.rawEquation} size="lg" />
           </div>
         </div>
 
@@ -209,8 +226,8 @@ export const StepByStepSolver: React.FC<StepByStepSolverProps> = ({
                   <p className="text-xs text-slate-600">{step.instruction}</p>
                   <p className="text-xs text-emerald-700 font-medium mt-0.5">{step.explanation}</p>
                 </div>
-                <span className="font-mono text-sm font-bold text-slate-900 bg-white px-2 py-1 rounded border border-emerald-200 shadow-2xs">
-                  {step.result}
+                <span className="font-bold text-slate-900 bg-white px-2.5 py-1.5 rounded border border-emerald-200 shadow-2xs shrink-0">
+                  <MathExpression expression={step.result} size="sm" />
                 </span>
               </div>
             ))}
@@ -257,6 +274,14 @@ export const StepByStepSolver: React.FC<StepByStepSolverProps> = ({
             </button>
           </div>
 
+          {/* Live vertical fraction preview when typing '/' */}
+          {userInput.includes('/') && (
+            <div className="flex items-center gap-2 px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-600">
+              <span className="font-medium shrink-0">Vista amb fraccions:</span>
+              <MathExpression expression={userInput} size="sm" className="font-bold text-slate-900" />
+            </div>
+          )}
+
           {/* Feedback Card if error or success */}
           {feedback && (
             <div
@@ -296,8 +321,9 @@ export const StepByStepSolver: React.FC<StepByStepSolverProps> = ({
             </button>
 
             {showHint && (
-              <span className="text-indigo-700 font-medium bg-indigo-50 px-2.5 py-1 rounded-md border border-indigo-100">
-                Pista: hauries d'arribar a <code className="font-mono font-bold">{currentStep.expectedExpression}</code>
+              <span className="inline-flex items-center gap-1.5 text-indigo-700 font-medium bg-indigo-50 px-2.5 py-1 rounded-md border border-indigo-100">
+                <span>Pista: hauries d'arribar a</span>
+                <MathExpression expression={currentStep.expectedExpression} size="xs" className="font-bold" />
               </span>
             )}
           </div>
@@ -341,8 +367,10 @@ export const StepByStepSolver: React.FC<StepByStepSolverProps> = ({
               <Lightbulb className="w-4 h-4 text-amber-500" />
               Comprovació de la solució:
             </p>
-            <p className="text-xs text-slate-600 leading-relaxed">
-              Si substituïm x = {exercise.solution} a l'equació original ({exercise.rawEquation}), es compleix exactament la igualtat a banda i banda. Així pots estar segur/a que el teu resultat és 100% correcte!
+            <p className="text-xs text-slate-600 leading-relaxed flex flex-wrap items-center gap-1">
+              <span>Si substituïm x = {exercise.solution} a l'equació original (</span>
+              <MathExpression expression={exercise.rawEquation} size="xs" className="font-semibold text-slate-800" />
+              <span>), es compleix exactament la igualtat a banda i banda. Així pots estar segur/a que el teu resultat és 100% correcte!</span>
             </p>
           </div>
 

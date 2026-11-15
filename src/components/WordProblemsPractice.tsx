@@ -3,15 +3,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState } from 'react';
-import { WordProblem } from '../types/math';
+import React, { useState, useEffect, useRef } from 'react';
+import { WordProblem, ErrorType } from '../types/math';
 import { soundEffects } from '../utils/soundEffects';
 import confetti from 'canvas-confetti';
-import { CheckCircle2, AlertCircle, ArrowRight, Lightbulb, BookOpen, Check } from 'lucide-react';
+import { CheckCircle2, AlertCircle, ArrowRight, Lightbulb, Check } from 'lucide-react';
+import { CompletionMeta } from './StepByStepSolver';
 
 interface WordProblemsPracticeProps {
   problem: WordProblem;
-  onCompleted: (isFirstTry: boolean) => void;
+  onCompleted: (isFirstTry: boolean, meta?: CompletionMeta) => void;
   onNextProblem: () => void;
 }
 
@@ -36,6 +37,22 @@ export const WordProblemsPractice: React.FC<WordProblemsPracticeProps> = ({
   const [solutionFeedback, setSolutionFeedback] = useState<{ isCorrect: boolean; text: string } | null>(null);
   const [isFinished, setIsFinished] = useState(false);
   const [hadAnyError, setHadAnyError] = useState(false);
+  const [errorTypes, setErrorTypes] = useState<ErrorType[]>([]);
+  const startTimeRef = useRef<number>(Date.now());
+
+  useEffect(() => {
+    setPhase(1);
+    setSelectedVarIndex(null);
+    setVarFeedback(null);
+    setSelectedEqIndex(null);
+    setEqFeedback(null);
+    setUserXVal('');
+    setSolutionFeedback(null);
+    setIsFinished(false);
+    setHadAnyError(false);
+    setErrorTypes([]);
+    startTimeRef.current = Date.now();
+  }, [problem.id]);
 
   const handleSelectVariable = (idx: number) => {
     setSelectedVarIndex(idx);
@@ -52,6 +69,7 @@ export const WordProblemsPractice: React.FC<WordProblemsPracticeProps> = ({
     } else {
       soundEffects.playGentleRetry();
       setHadAnyError(true);
+      setErrorTypes((prev) => [...prev, 'UNKNOWN']);
       setVarFeedback({
         isCorrect: false,
         text: 'Aquesta no és la incògnita principal. Pensa: Què és exactament el que ens pregunta el problema?',
@@ -74,6 +92,7 @@ export const WordProblemsPractice: React.FC<WordProblemsPracticeProps> = ({
     } else {
       soundEffects.playGentleRetry();
       setHadAnyError(true);
+      setErrorTypes((prev) => [...prev, 'SYNTAX_OR_FORMAT']);
       setEqFeedback({
         isCorrect: false,
         text: opt.explanationIfWrong || 'Aquesta equació no és correcta per a aquest enunciat.',
@@ -93,10 +112,16 @@ export const WordProblemsPractice: React.FC<WordProblemsPracticeProps> = ({
       });
       setIsFinished(true);
       confetti({ particleCount: 60, spread: 70, origin: { y: 0.7 } });
-      onCompleted(!hadAnyError);
+      const elapsedSeconds = Math.max(1, Math.round((Date.now() - startTimeRef.current) / 1000));
+      onCompleted(!hadAnyError, {
+        timeSpentSeconds: elapsedSeconds,
+        mistakesCount: errorTypes.length,
+        errorTypes,
+      });
     } else {
       soundEffects.playGentleRetry();
       setHadAnyError(true);
+      setErrorTypes((prev) => [...prev, 'ARITHMETIC_CALCULATION']);
       setSolutionFeedback({
         isCorrect: false,
         text: `Aquest valor de x no compleix l'equació ${problem.correctEquation}. Revisa els passos de resolució o comprova substituint.`,

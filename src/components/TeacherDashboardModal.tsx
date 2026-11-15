@@ -24,6 +24,7 @@ import {
   ShieldAlert,
   Share2,
 } from 'lucide-react';
+import { TeacherAnalyticsCharts } from './TeacherAnalyticsCharts';
 
 interface TeacherDashboardModalProps {
   isOpen: boolean;
@@ -40,6 +41,7 @@ export const TeacherDashboardModal: React.FC<TeacherDashboardModalProps> = ({ is
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
+  const [selectedStudentId, setSelectedStudentId] = useState<string>('all');
 
   // Tab: 'overview' | 'firebase'
   const [activeTab, setActiveTab] = useState<'overview' | 'firebase'>('overview');
@@ -288,7 +290,8 @@ export const TeacherDashboardModal: React.FC<TeacherDashboardModalProps> = ({ is
                       <button
                         onClick={() => {
                           if (typeof window !== 'undefined') {
-                            navigator.clipboard.writeText(window.location.origin);
+                            const shareUrl = window.location.href.split('?')[0].split('#')[0];
+                            navigator.clipboard.writeText(shareUrl);
                             setCopiedLink(true);
                             setTimeout(() => setCopiedLink(false), 2500);
                           }
@@ -365,6 +368,13 @@ export const TeacherDashboardModal: React.FC<TeacherDashboardModalProps> = ({ is
                     </div>
                   </div>
 
+                  {/* Recharts Analytics Visualization */}
+                  <TeacherAnalyticsCharts
+                    students={filteredStudents}
+                    selectedStudentId={selectedStudentId}
+                    onSelectStudentId={setSelectedStudentId}
+                  />
+
                   {/* Search bar */}
                   <div className="relative">
                     <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
@@ -407,8 +417,16 @@ export const TeacherDashboardModal: React.FC<TeacherDashboardModalProps> = ({ is
                                 st.totalSolved > 0
                                   ? Math.round((st.correctFirstTry / st.totalSolved) * 100)
                                   : 0;
+                              const isRowSelected = selectedStudentId === st.id;
                               return (
-                                <tr key={st.id} className="hover:bg-slate-50/70 transition-colors">
+                                <tr
+                                  key={st.id}
+                                  onClick={() => setSelectedStudentId(isRowSelected ? 'all' : st.id)}
+                                  title="Fes clic per veure els gràfics d'aquest alumne/a"
+                                  className={`transition-colors cursor-pointer ${
+                                    isRowSelected ? 'bg-indigo-50/70' : 'hover:bg-slate-50/70'
+                                  }`}
+                                >
                                   <td className="py-3 px-4 font-bold text-slate-900">{st.name}</td>
                                   <td className="py-3 px-3">
                                     <span

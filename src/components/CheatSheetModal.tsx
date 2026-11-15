@@ -4,7 +4,8 @@
  */
 
 import React from 'react';
-import { X, BookOpen, Scale, Sparkles, AlertTriangle, ArrowRightLeft, CheckCircle2 } from 'lucide-react';
+import { X, BookOpen, Scale, Sparkles, AlertTriangle } from 'lucide-react';
+import { MathExpression } from './MathExpression';
 
 interface CheatSheetModalProps {
   isOpen: boolean;
@@ -70,9 +71,17 @@ export const CheatSheetModal: React.FC<CheatSheetModalProps> = ({ isOpen, onClos
               <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
                 <span className="font-semibold text-slate-900 block mb-1">Per contrarestar multiplicació o divisió:</span>
                 <p>• Si el coeficient <strong>multiplica</strong> (3x = 15): <strong>dividim cada membre entre 3</strong>.</p>
-                <p className="font-mono text-slate-600 text-[11px] mt-0.5">3x / 3 = 15 / 3 → x = 5</p>
-                <p className="mt-1.5">• Si està <strong>dividint</strong> (x / 2 = 4): <strong>multipliquem cada membre per 2</strong>.</p>
-                <p className="font-mono text-slate-600 text-[11px] mt-0.5">(x / 2) · 2 = 4 · 2 → x = 8</p>
+                <div className="text-slate-700 mt-1">
+                  <MathExpression expression="3x / 3 = 15 / 3 → x = 5" size="xs" />
+                </div>
+                <p className="mt-2 flex flex-wrap items-center gap-1">
+                  <span>• Si està <strong>dividint</strong> (</span>
+                  <MathExpression expression="x / 2 = 4" size="xs" className="font-semibold" />
+                  <span>): <strong>multipliquem cada membre per 2</strong>.</span>
+                </p>
+                <div className="text-slate-700 mt-1">
+                  <MathExpression expression="(x / 2) · 2 = 4 · 2 → x = 8" size="xs" />
+                </div>
               </div>
             </div>
           </div>

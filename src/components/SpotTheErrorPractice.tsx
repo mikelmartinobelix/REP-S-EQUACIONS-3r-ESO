@@ -3,15 +3,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState } from 'react';
-import { SpotTheErrorExercise } from '../types/math';
+import React, { useState, useEffect, useRef } from 'react';
+import { SpotTheErrorExercise, ErrorType } from '../types/math';
+import { MathExpression } from './MathExpression';
 import { soundEffects } from '../utils/soundEffects';
 import confetti from 'canvas-confetti';
 import { CheckCircle2, AlertCircle, HelpCircle, ArrowRight, Lightbulb, Search } from 'lucide-react';
+import { CompletionMeta } from './StepByStepSolver';
 
 interface SpotTheErrorPracticeProps {
   exercise: SpotTheErrorExercise;
-  onCompleted: (isFirstTry: boolean) => void;
+  onCompleted: (isFirstTry: boolean, meta?: CompletionMeta) => void;
   onNextExercise: () => void;
 }
 
@@ -21,22 +23,36 @@ export const SpotTheErrorPractice: React.FC<SpotTheErrorPracticeProps> = ({
   onNextExercise,
 }) => {
   const [selectedLineIndex, setSelectedLineIndex] = useState<number | null>(null);
-  const [hasChecked, setHasChecked] = useState(false);
   const [showHint, setShowHint] = useState(false);
   const [hadMistake, setHadMistake] = useState(false);
+  const [errorTypes, setErrorTypes] = useState<ErrorType[]>([]);
+  const startTimeRef = useRef<number>(Date.now());
+
+  useEffect(() => {
+    setSelectedLineIndex(null);
+    setShowHint(false);
+    setHadMistake(false);
+    setErrorTypes([]);
+    startTimeRef.current = Date.now();
+  }, [exercise.id]);
 
   const handleSelectLine = (index: number) => {
     setSelectedLineIndex(index);
-    setHasChecked(true);
 
     const line = exercise.lines[index];
     if (line.isError) {
       soundEffects.playCelebration();
       confetti({ particleCount: 50, spread: 60, origin: { y: 0.7 } });
-      onCompleted(!hadMistake);
+      const elapsedSeconds = Math.max(1, Math.round((Date.now() - startTimeRef.current) / 1000));
+      onCompleted(!hadMistake, {
+        timeSpentSeconds: elapsedSeconds,
+        mistakesCount: errorTypes.length,
+        errorTypes,
+      });
     } else {
       soundEffects.playGentleRetry();
       setHadMistake(true);
+      setErrorTypes((prev) => [...prev, 'UNKNOWN']);
     }
   };
 
@@ -62,8 +78,8 @@ export const SpotTheErrorPractice: React.FC<SpotTheErrorPracticeProps> = ({
         </p>
 
         {/* Big original equation display */}
-        <div className="text-center py-3 bg-slate-50 rounded-xl border border-slate-100 font-mono text-xl font-bold text-slate-900">
-          {exercise.equation}
+        <div className="text-center py-3 bg-slate-50 rounded-xl border border-slate-100 font-bold text-slate-900">
+          <MathExpression expression={exercise.equation} size="lg" />
         </div>
       </div>
 
@@ -88,8 +104,21 @@ export const SpotTheErrorPractice: React.FC<SpotTheErrorPracticeProps> = ({
                 onClick={() => handleSelectLine(idx)}
                 className={`w-full text-left p-3.5 rounded-xl border transition-all cursor-pointer flex items-center justify-between ${lineClass}`}
               >
-                <span className="font-mono text-base font-semibold text-slate-800">
-                  {line.text}
+                <span className="font-mono text-base font-semibold text-slate-800 flex items-center gap-2">
+                  {(() => {
+                    const match = line.text.match(/^(Pas \d+:\s*)(.+)$/);
+                    if (match) {
+                      return (
+                        <>
+                          <span className="text-slate-500 font-sans text-xs font-semibold uppercase tracking-wide">
+                            {match[1].trim()}
+                          </span>
+                          <MathExpression expression={match[2]} size="md" />
+                        </>
+                      );
+                    }
+                    return <MathExpression expression={line.text} size="md" />;
+                  })()}
                 </span>
 
                 {isSelected && (
@@ -147,10 +176,10 @@ export const SpotTheErrorPractice: React.FC<SpotTheErrorPracticeProps> = ({
 
           {selectedLine.correctVersion && (
             <div className="p-3 bg-white rounded-lg border border-emerald-200/80 text-xs">
-              <span className="font-medium text-slate-600">Com hauria d'haver estat la línia correcta:</span>
-              <p className="font-mono text-base font-bold text-indigo-700 mt-0.5">
-                {selectedLine.correctVersion}
-              </p>
+              <span className="font-medium text-slate-600 block">Com hauria d'haver estat la línia correcta:</span>
+              <div className="font-bold text-indigo-700 mt-1">
+                <MathExpression expression={selectedLine.correctVersion} size="md" />
+              </div>
             </div>
           )}
 

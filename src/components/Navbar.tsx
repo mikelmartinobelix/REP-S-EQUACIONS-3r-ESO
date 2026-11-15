@@ -106,7 +106,8 @@ export const Navbar: React.FC<NavbarProps> = ({
             <button
               onClick={() => {
                 if (typeof window !== 'undefined') {
-                  navigator.clipboard.writeText(window.location.origin);
+                  const shareUrl = window.location.href.split('?')[0].split('#')[0];
+                  navigator.clipboard.writeText(shareUrl);
                   setIsCopied(true);
                   setTimeout(() => setIsCopied(false), 2500);
                 }

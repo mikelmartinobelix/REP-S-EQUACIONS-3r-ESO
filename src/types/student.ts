@@ -3,6 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import { ErrorType } from './math';
+
 export type StudentGroup = 'A' | 'B' | 'C' | 'repas';
 
 export interface StudentSession {
@@ -11,6 +13,8 @@ export interface StudentSession {
   timestamp: string;
   isFirstTry: boolean;
   mistakesCount: number;
+  timeSpentSeconds?: number;
+  errorTypes?: ErrorType[];
 }
 
 export interface StudentProfile {

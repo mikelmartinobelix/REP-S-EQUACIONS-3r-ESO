@@ -19,7 +19,7 @@ import {
 import { WORD_PROBLEMS } from './data/problemsBank';
 import { SPOT_THE_ERROR_EXERCISES } from './data/spotTheErrorBank';
 import { Navbar } from './components/Navbar';
-import { StepByStepSolver } from './components/StepByStepSolver';
+import { StepByStepSolver, CompletionMeta } from './components/StepByStepSolver';
 import { AutonomousPractice } from './components/AutonomousPractice';
 import { WordProblemsPractice } from './components/WordProblemsPractice';
 import { SpotTheErrorPractice } from './components/SpotTheErrorPractice';
@@ -186,12 +186,23 @@ export default function App() {
     setCurrentSpot(SPOT_THE_ERROR_EXERCISES[nextIdx]);
   };
 
-  const handleRecordCompletion = (isFirstTry: boolean, levelKey: EquationDifficulty) => {
+  const handleRecordCompletion = (
+    isFirstTry: boolean,
+    levelKey: EquationDifficulty,
+    meta?: CompletionMeta,
+    explicitExerciseId?: string
+  ) => {
     const newStreak = stats.streak + 1;
     const newBest = Math.max(newStreak, stats.bestStreak);
     const prevMastery = stats.levelMastery[levelKey] || 0;
     const masteryGain = isFirstTry ? 15 : 8;
     const newMastery = Math.min(100, prevMastery + masteryGain);
+
+    const recordedErrors = meta?.errorTypes || [];
+    const updatedErrorsCount = { ...stats.commonErrorsCount };
+    recordedErrors.forEach((errKey) => {
+      updatedErrorsCount[errKey] = (updatedErrorsCount[errKey] || 0) + 1;
+    });
 
     const updatedStats: UserStats = {
       ...stats,
@@ -203,12 +214,18 @@ export default function App() {
         ...stats.levelMastery,
         [levelKey]: newMastery,
       },
+      commonErrorsCount: updatedErrorsCount,
     };
     setStats(updatedStats);
 
     // Sync student profile and Firebase tracking
     if (currentStudent) {
       const nowStr = new Date().toISOString();
+      const updatedStudentMistakes = { ...(currentStudent.commonMistakes || {}) };
+      recordedErrors.forEach((errKey) => {
+        updatedStudentMistakes[errKey] = (updatedStudentMistakes[errKey] || 0) + 1;
+      });
+
       const updatedStudent: StudentProfile = {
         ...currentStudent,
         lastActive: nowStr,
@@ -217,14 +234,17 @@ export default function App() {
         streak: newStreak,
         bestStreak: newBest,
         levelMastery: updatedStats.levelMastery,
+        commonMistakes: updatedStudentMistakes,
         sessions: [
           ...(currentStudent.sessions || []),
           {
-            exerciseId: currentEquation.id,
+            exerciseId: explicitExerciseId || currentEquation.id,
             level: levelKey,
             timestamp: nowStr,
             isFirstTry,
-            mistakesCount: isFirstTry ? 0 : 1,
+            mistakesCount: meta?.mistakesCount ?? (isFirstTry ? 0 : 1),
+            timeSpentSeconds: meta?.timeSpentSeconds,
+            errorTypes: recordedErrors,
           },
         ],
       };
@@ -348,7 +368,9 @@ export default function App() {
         {currentTab === 'guided' && (
           <StepByStepSolver
             exercise={currentEquation}
-            onCompleted={(isFirstTry) => handleRecordCompletion(isFirstTry, currentLevel)}
+            onCompleted={(isFirstTry, meta) =>
+              handleRecordCompletion(isFirstTry, currentLevel, meta, currentEquation.id)
+            }
             onNextExercise={handleNextEquation}
           />
         )}
@@ -357,7 +379,9 @@ export default function App() {
         {currentTab === 'autonomous' && (
           <AutonomousPractice
             exercise={currentEquation}
-            onCompleted={(isFirstTry) => handleRecordCompletion(isFirstTry, currentLevel)}
+            onCompleted={(isFirstTry, meta) =>
+              handleRecordCompletion(isFirstTry, currentLevel, meta, currentEquation.id)
+            }
             onNextExercise={handleNextEquation}
           />
         )}
@@ -366,7 +390,9 @@ export default function App() {
         {currentTab === 'problems' && (
           <WordProblemsPractice
             problem={currentProblem}
-            onCompleted={(isFirstTry) => handleRecordCompletion(isFirstTry, 'problemes')}
+            onCompleted={(isFirstTry, meta) =>
+              handleRecordCompletion(isFirstTry, 'problemes', meta, currentProblem.id)
+            }
             onNextProblem={handleNextProblem}
           />
         )}
@@ -375,7 +401,9 @@ export default function App() {
         {currentTab === 'spot-error' && (
           <SpotTheErrorPractice
             exercise={currentSpot}
-            onCompleted={(isFirstTry) => handleRecordCompletion(isFirstTry, 'nivell-2')}
+            onCompleted={(isFirstTry, meta) =>
+              handleRecordCompletion(isFirstTry, 'nivell-2', meta, currentSpot.id)
+            }
             onNextExercise={handleNextSpotExercise}
           />
         )}

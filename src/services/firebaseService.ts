@@ -216,12 +216,17 @@ class FirebaseService {
       'Encerts a la primera',
       'Percentatge d\'encert',
       'Ratxa màxima',
+      'Temps dedicat (min)',
+      'Errors totals',
       'Última activitat',
     ];
 
     const rows = students.map((s) => {
       const accuracy = s.totalSolved > 0 ? Math.round((s.correctFirstTry / s.totalSolved) * 100) : 0;
       const groupLabel = s.group === 'repas' ? 'Repàs' : `Grup ${s.group}`;
+      const totalSeconds = (s.sessions || []).reduce((acc, ses) => acc + (ses.timeSpentSeconds || 0), 0);
+      const totalMinutes = (totalSeconds / 60).toFixed(1);
+      const totalErrors = (s.sessions || []).reduce((acc, ses) => acc + (ses.mistakesCount || 0), 0);
       return [
         `"${s.name.replace(/"/g, '""')}"`,
         `"${groupLabel}"`,
@@ -229,6 +234,8 @@ class FirebaseService {
         s.correctFirstTry,
         `"${accuracy}%"`,
         s.bestStreak,
+        totalMinutes,
+        totalErrors,
         `"${new Date(s.lastActive).toLocaleString('ca-ES')}"`,
       ].join(',');
     });

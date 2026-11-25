@@ -85,7 +85,7 @@ export default function App() {
 
   const [hasStudentAccess, setHasStudentAccess] = useState<boolean>(() => {
     try {
-      return localStorage.getItem(STUDENT_ACCESS_STORAGE_KEY) === 'granted';
+      return sessionStorage.getItem(STUDENT_ACCESS_STORAGE_KEY) === 'granted';
     } catch {
       return false;
     }
@@ -165,7 +165,7 @@ export default function App() {
     setCurrentStudent(profile);
     setHasStudentAccess(true);
     localStorage.setItem(CURRENT_STUDENT_STORAGE_KEY, JSON.stringify(profile));
-    localStorage.setItem(STUDENT_ACCESS_STORAGE_KEY, 'granted');
+    sessionStorage.setItem(STUDENT_ACCESS_STORAGE_KEY, 'granted');
     firebaseService.syncStudentProfile(profile);
     setIsStudentLoginOpen(false);
   };
@@ -289,6 +289,27 @@ export default function App() {
       setStats(DEFAULT_STATS);
     }
   };
+
+  if (!hasStudentAccess || !currentStudent) {
+    return (
+      <>
+        <StudentLoginModal
+          isOpen={true}
+          isFullPageGate={true}
+          currentStudent={currentStudent}
+          hasAccessVerified={false}
+          onSaveStudent={handleSaveStudent}
+          onClose={() => {}}
+          onOpenTeacherDashboard={() => setIsTeacherDashboardOpen(true)}
+          canCloseWithoutSaving={false}
+        />
+        <TeacherDashboardModal
+          isOpen={isTeacherDashboardOpen}
+          onClose={() => setIsTeacherDashboardOpen(false)}
+        />
+      </>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-100/60 text-slate-800 flex flex-col font-sans">

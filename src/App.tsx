@@ -29,6 +29,7 @@ import { CheatSheetModal } from './components/CheatSheetModal';
 import { StudentLoginModal } from './components/StudentLoginModal';
 import { TeacherDashboardModal } from './components/TeacherDashboardModal';
 import { firebaseService } from './services/firebaseService';
+import { googleSheetsService } from './services/googleSheetsService';
 import { soundEffects } from './utils/soundEffects';
 import { Sparkles, RefreshCw, Layers } from 'lucide-react';
 
@@ -144,22 +145,35 @@ export default function App() {
   }, [currentLevel]);
 
   const handleSaveStudent = (name: string, group: StudentGroup) => {
-    const studentId = currentStudent?.id || `student-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
+    const cleanName = name.trim();
+    const isSameStudent =
+      currentStudent !== null &&
+      currentStudent.name.trim().toLowerCase() === cleanName.toLowerCase() &&
+      currentStudent.group === group;
+
+    const studentId = isSameStudent
+      ? currentStudent.id
+      : `student-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
     const nowStr = new Date().toISOString();
+
+    const baseStats = isSameStudent ? stats : DEFAULT_STATS;
+    if (!isSameStudent) {
+      setStats(DEFAULT_STATS);
+    }
 
     const profile: StudentProfile = {
       id: studentId,
-      name,
+      name: cleanName,
       group,
-      createdAt: currentStudent?.createdAt || nowStr,
+      createdAt: isSameStudent ? currentStudent.createdAt : nowStr,
       lastActive: nowStr,
-      totalSolved: currentStudent?.totalSolved || stats.totalSolved,
-      correctFirstTry: currentStudent?.correctFirstTry || stats.correctFirstTry,
-      streak: stats.streak,
-      bestStreak: Math.max(stats.bestStreak, currentStudent?.bestStreak || 0),
-      levelMastery: stats.levelMastery,
-      commonMistakes: stats.commonErrorsCount,
-      sessions: currentStudent?.sessions || [],
+      totalSolved: isSameStudent ? currentStudent.totalSolved : 0,
+      correctFirstTry: isSameStudent ? currentStudent.correctFirstTry : 0,
+      streak: baseStats.streak,
+      bestStreak: isSameStudent ? Math.max(baseStats.bestStreak, currentStudent.bestStreak || 0) : 0,
+      levelMastery: baseStats.levelMastery,
+      commonMistakes: isSameStudent ? currentStudent.commonMistakes : baseStats.commonErrorsCount,
+      sessions: isSameStudent ? currentStudent.sessions || [] : [],
     };
 
     setCurrentStudent(profile);
@@ -167,6 +181,7 @@ export default function App() {
     localStorage.setItem(CURRENT_STUDENT_STORAGE_KEY, JSON.stringify(profile));
     sessionStorage.setItem(STUDENT_ACCESS_STORAGE_KEY, 'granted');
     firebaseService.syncStudentProfile(profile);
+    googleSheetsService.sendEvent(profile, { eventType: 'login' });
     setIsStudentLoginOpen(false);
   };
 
@@ -262,6 +277,15 @@ export default function App() {
       setCurrentStudent(updatedStudent);
       localStorage.setItem(CURRENT_STUDENT_STORAGE_KEY, JSON.stringify(updatedStudent));
       firebaseService.syncStudentProfile(updatedStudent);
+      googleSheetsService.sendEvent(updatedStudent, {
+        eventType: 'exercise',
+        level: levelKey,
+        exerciseId: explicitExerciseId || currentEquation.id,
+        isFirstTry,
+        timeSpentSeconds: meta?.timeSpentSeconds ?? 0,
+        mistakesCount: meta?.mistakesCount ?? (isFirstTry ? 0 : 1),
+        errorTypes: recordedErrors,
+      });
     }
 
     // Check for level up recommendation

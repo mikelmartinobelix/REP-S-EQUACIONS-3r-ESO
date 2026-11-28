@@ -5,6 +5,7 @@
 
 import { ErrorType } from './math';
 
+export type StudentCourse = '1r ESO' | '2n ESO' | '3r ESO' | '4t ESO';
 export type StudentGroup = 'A' | 'B' | 'C' | 'repas';
 
 export interface StudentSession {
@@ -20,6 +21,7 @@ export interface StudentSession {
 export interface StudentProfile {
   id: string;
   name: string;
+  course?: StudentCourse;
   group: StudentGroup;
   createdAt: string;
   lastActive: string;

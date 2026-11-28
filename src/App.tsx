@@ -11,7 +11,7 @@ import {
   WordProblem,
   SpotTheErrorExercise,
 } from './types/math';
-import { StudentProfile, StudentGroup } from './types/student';
+import { StudentCourse, StudentProfile, StudentGroup } from './types/student';
 import {
   CURRICULUM_EQUATIONS,
   generateRandomEquation,
@@ -27,7 +27,6 @@ import { InteractiveBalance } from './components/InteractiveBalance';
 import { StudentProgressCard } from './components/StudentProgressCard';
 import { CheatSheetModal } from './components/CheatSheetModal';
 import { StudentLoginModal } from './components/StudentLoginModal';
-import { TeacherDashboardModal } from './components/TeacherDashboardModal';
 import { firebaseService } from './services/firebaseService';
 import { googleSheetsService } from './services/googleSheetsService';
 import { soundEffects } from './utils/soundEffects';
@@ -93,7 +92,6 @@ export default function App() {
   });
 
   const [isStudentLoginOpen, setIsStudentLoginOpen] = useState(false);
-  const [isTeacherDashboardOpen, setIsTeacherDashboardOpen] = useState(false);
   const [isCheatSheetOpen, setIsCheatSheetOpen] = useState(false);
 
   const [currentTab, setCurrentTab] = useState<
@@ -144,11 +142,12 @@ export default function App() {
     }
   }, [currentLevel]);
 
-  const handleSaveStudent = (name: string, group: StudentGroup) => {
+  const handleSaveStudent = (name: string, course: StudentCourse, group: StudentGroup) => {
     const cleanName = name.trim();
     const isSameStudent =
       currentStudent !== null &&
       currentStudent.name.trim().toLowerCase() === cleanName.toLowerCase() &&
+      (currentStudent.course || '3r ESO') === course &&
       currentStudent.group === group;
 
     const studentId = isSameStudent
@@ -164,6 +163,7 @@ export default function App() {
     const profile: StudentProfile = {
       id: studentId,
       name: cleanName,
+      course,
       group,
       createdAt: isSameStudent ? currentStudent.createdAt : nowStr,
       lastActive: nowStr,
@@ -316,22 +316,15 @@ export default function App() {
 
   if (!hasStudentAccess || !currentStudent) {
     return (
-      <>
-        <StudentLoginModal
-          isOpen={true}
-          isFullPageGate={true}
-          currentStudent={currentStudent}
-          hasAccessVerified={false}
-          onSaveStudent={handleSaveStudent}
-          onClose={() => {}}
-          onOpenTeacherDashboard={() => setIsTeacherDashboardOpen(true)}
-          canCloseWithoutSaving={false}
-        />
-        <TeacherDashboardModal
-          isOpen={isTeacherDashboardOpen}
-          onClose={() => setIsTeacherDashboardOpen(false)}
-        />
-      </>
+      <StudentLoginModal
+        isOpen={true}
+        isFullPageGate={true}
+        currentStudent={currentStudent}
+        hasAccessVerified={false}
+        onSaveStudent={handleSaveStudent}
+        onClose={() => {}}
+        canCloseWithoutSaving={false}
+      />
     );
   }
 
@@ -349,8 +342,8 @@ export default function App() {
         soundEnabled={stats.soundEnabled}
         onToggleSound={handleToggleSound}
         onOpenCheatSheet={() => setIsCheatSheetOpen(true)}
-        onOpenTeacherDashboard={() => setIsTeacherDashboardOpen(true)}
         studentName={currentStudent?.name}
+        studentCourse={currentStudent?.course}
         studentGroup={currentStudent?.group}
         onChangeStudent={() => setIsStudentLoginOpen(true)}
         streak={stats.streak}
@@ -508,14 +501,8 @@ export default function App() {
 
       {/* Footer */}
       <footer className="mt-auto border-t border-slate-200 bg-white py-4 text-center text-xs text-slate-500">
-        <div className="max-w-5xl mx-auto px-4 flex flex-wrap items-center justify-between gap-2">
-          <span>Àlgebra Pas a Pas · Matemàtiques 3r d'ESO (Catalunya)</span>
-          <button
-            onClick={() => setIsTeacherDashboardOpen(true)}
-            className="text-indigo-600 hover:text-indigo-800 font-medium inline-flex items-center gap-1 cursor-pointer"
-          >
-            Accés Panell Docent
-          </button>
+        <div className="max-w-5xl mx-auto px-4 flex flex-wrap items-center justify-center gap-2">
+          <span>Àlgebra Pas a Pas · Matemàtiques ESO (Catalunya)</span>
         </div>
       </footer>
 
@@ -532,11 +519,6 @@ export default function App() {
         onSaveStudent={handleSaveStudent}
         onClose={() => setIsStudentLoginOpen(false)}
         canCloseWithoutSaving={currentStudent !== null && hasStudentAccess}
-      />
-
-      <TeacherDashboardModal
-        isOpen={isTeacherDashboardOpen}
-        onClose={() => setIsTeacherDashboardOpen(false)}
       />
     </div>
   );

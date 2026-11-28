@@ -4,8 +4,8 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { StudentGroup, StudentProfile } from '../types/student';
-import { Users, User, ArrowRight, Lock, Eye, EyeOff, AlertCircle, ShieldCheck } from 'lucide-react';
+import { StudentCourse, StudentGroup, StudentProfile } from '../types/student';
+import { Users, User, ArrowRight, Lock, Eye, EyeOff, AlertCircle, GraduationCap } from 'lucide-react';
 
 export const STUDENT_ACCESS_PASSWORD = 'Macitec3';
 
@@ -14,9 +14,8 @@ interface StudentLoginModalProps {
   currentStudent: StudentProfile | null;
   hasAccessVerified?: boolean;
   isFullPageGate?: boolean;
-  onSaveStudent: (name: string, group: StudentGroup) => void;
+  onSaveStudent: (name: string, course: StudentCourse, group: StudentGroup) => void;
   onClose: () => void;
-  onOpenTeacherDashboard?: () => void;
   canCloseWithoutSaving?: boolean;
 }
 
@@ -27,11 +26,13 @@ export const StudentLoginModal: React.FC<StudentLoginModalProps> = ({
   isFullPageGate = false,
   onSaveStudent,
   onClose,
-  onOpenTeacherDashboard,
   canCloseWithoutSaving = false,
 }) => {
   const [name, setName] = useState(currentStudent?.name || '');
-  const [group, setGroup] = useState<StudentGroup>(currentStudent?.group || 'A');
+  const [course, setCourse] = useState<StudentCourse>(currentStudent?.course || '3r ESO');
+  const [group, setGroup] = useState<StudentGroup>(
+    currentStudent?.group === 'B' || currentStudent?.group === 'C' ? currentStudent.group : 'A'
+  );
   const [password, setPassword] = useState(hasAccessVerified ? STUDENT_ACCESS_PASSWORD : '');
   const [showPassword, setShowPassword] = useState(false);
   const [passwordError, setPasswordError] = useState(false);
@@ -39,7 +40,10 @@ export const StudentLoginModal: React.FC<StudentLoginModalProps> = ({
   useEffect(() => {
     if (isOpen) {
       setName(currentStudent?.name || '');
-      setGroup(currentStudent?.group || 'A');
+      setCourse(currentStudent?.course || '3r ESO');
+      setGroup(
+        currentStudent?.group === 'B' || currentStudent?.group === 'C' ? currentStudent.group : 'A'
+      );
       setPassword(hasAccessVerified ? STUDENT_ACCESS_PASSWORD : '');
       setPasswordError(false);
     }
@@ -56,14 +60,20 @@ export const StudentLoginModal: React.FC<StudentLoginModalProps> = ({
       return;
     }
 
-    onSaveStudent(name.trim(), group);
+    onSaveStudent(name.trim(), course, group);
   };
 
-  const groups: { id: StudentGroup; label: string; desc: string }[] = [
-    { id: 'A', label: 'Grup 3r A', desc: 'Matemàtiques 3r d\'ESO A' },
-    { id: 'B', label: 'Grup 3r B', desc: 'Matemàtiques 3r d\'ESO B' },
-    { id: 'C', label: 'Grup 3r C', desc: 'Matemàtiques 3r d\'ESO C' },
-    { id: 'repas', label: 'Grup de Repàs', desc: 'Reforç i suport de matemàtiques' },
+  const courses: { id: StudentCourse; label: string }[] = [
+    { id: '1r ESO', label: '1r ESO' },
+    { id: '2n ESO', label: '2n ESO' },
+    { id: '3r ESO', label: '3r ESO' },
+    { id: '4t ESO', label: '4t ESO' },
+  ];
+
+  const classes: { id: StudentGroup; label: string }[] = [
+    { id: 'A', label: 'Classe A' },
+    { id: 'B', label: 'Classe B' },
+    { id: 'C', label: 'Classe C' },
   ];
 
   const cardContent = (
@@ -73,11 +83,11 @@ export const StudentLoginModal: React.FC<StudentLoginModalProps> = ({
         <div className="w-12 h-12 rounded-2xl bg-white/10 backdrop-blur-md text-white flex items-center justify-center mx-auto mb-3 font-serif text-2xl font-bold border border-white/20">
           x
         </div>
-        <h2 className="text-xl font-bold">Àlgebra Pas a Pas · 3r d'ESO</h2>
+        <h2 className="text-xl font-bold">Àlgebra Pas a Pas · ESO</h2>
         <p className="text-indigo-100 text-xs mt-1">
           {hasAccessVerified
-            ? 'Actualitza el teu nom o grup de classe'
-            : 'Introdueix la contrasenya de classe, el teu nom i grup per accedir'}
+            ? 'Actualitza el teu nom, curs o classe'
+            : 'Introdueix la contrasenya, el teu nom, curs i classe per accedir'}
         </p>
       </div>
 
@@ -140,29 +150,49 @@ export const StudentLoginModal: React.FC<StudentLoginModalProps> = ({
           />
         </div>
 
+        {/* Course Selector */}
+        <div className="space-y-2">
+          <label className="text-xs font-semibold text-slate-700 flex items-center gap-1.5">
+            <GraduationCap className="w-3.5 h-3.5 text-indigo-600" />
+            Tria el teu curs:
+          </label>
+          <div className="grid grid-cols-4 gap-2">
+            {courses.map((c) => (
+              <button
+                key={c.id}
+                type="button"
+                onClick={() => setCourse(c.id)}
+                className={`py-2.5 px-2 text-center rounded-xl border transition-all cursor-pointer ${
+                  course === c.id
+                    ? 'border-indigo-600 bg-indigo-50/80 ring-1 ring-indigo-500 text-indigo-900 font-bold'
+                    : 'border-slate-200 bg-white hover:bg-slate-50 text-slate-800 font-medium'
+                } text-xs`}
+              >
+                {c.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Class Selector */}
         <div className="space-y-2">
           <label className="text-xs font-semibold text-slate-700 flex items-center gap-1.5">
             <Users className="w-3.5 h-3.5 text-indigo-600" />
-            Tria el teu grup de classe:
+            Tria la teva classe:
           </label>
-          <div className="grid grid-cols-2 gap-2">
-            {groups.map((g) => (
+          <div className="grid grid-cols-3 gap-2">
+            {classes.map((cls) => (
               <button
-                key={g.id}
+                key={cls.id}
                 type="button"
-                onClick={() => setGroup(g.id)}
-                className={`p-3 text-left rounded-xl border transition-all cursor-pointer ${
-                  group === g.id
-                    ? 'border-indigo-600 bg-indigo-50/70 ring-1 ring-indigo-500'
-                    : 'border-slate-200 bg-white hover:bg-slate-50'
-                }`}
+                onClick={() => setGroup(cls.id)}
+                className={`py-2.5 px-3 text-center rounded-xl border transition-all cursor-pointer ${
+                  group === cls.id
+                    ? 'border-indigo-600 bg-indigo-50/80 ring-1 ring-indigo-500 text-indigo-900 font-bold'
+                    : 'border-slate-200 bg-white hover:bg-slate-50 text-slate-800 font-medium'
+                } text-xs`}
               >
-                <span className={`block text-xs font-bold ${group === g.id ? 'text-indigo-900' : 'text-slate-800'}`}>
-                  {g.label}
-                </span>
-                <span className="text-[10px] text-slate-500 block mt-0.5 line-clamp-1">
-                  {g.desc}
-                </span>
+                {cls.label}
               </button>
             ))}
           </div>
@@ -187,19 +217,6 @@ export const StudentLoginModal: React.FC<StudentLoginModalProps> = ({
             <ArrowRight className="w-4 h-4" />
           </button>
         </div>
-
-        {isFullPageGate && onOpenTeacherDashboard && (
-          <div className="pt-2 border-t border-slate-100 text-center">
-            <button
-              type="button"
-              onClick={onOpenTeacherDashboard}
-              className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-500 hover:text-indigo-600 transition-colors cursor-pointer"
-            >
-              <ShieldCheck className="w-3.5 h-3.5" />
-              Accés exclusiu docent
-            </button>
-          </div>
-        )}
       </form>
     </div>
   );

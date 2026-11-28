@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { Volume2, VolumeX, BookOpen, Scale, Sparkles, User, ShieldCheck, Share2, Check } from 'lucide-react';
+import { Volume2, VolumeX, BookOpen, User, Share2, Check } from 'lucide-react';
 import { EquationDifficulty } from '../types/math';
-import { StudentGroup } from '../types/student';
+import { StudentCourse, StudentGroup } from '../types/student';
 
 interface NavbarProps {
   currentTab: 'guided' | 'autonomous' | 'problems' | 'spot-error' | 'balance';
@@ -11,8 +11,8 @@ interface NavbarProps {
   soundEnabled: boolean;
   onToggleSound: () => void;
   onOpenCheatSheet: () => void;
-  onOpenTeacherDashboard: () => void;
   studentName?: string;
+  studentCourse?: StudentCourse;
   studentGroup?: StudentGroup;
   onChangeStudent: () => void;
   streak: number;
@@ -26,14 +26,15 @@ export const Navbar: React.FC<NavbarProps> = ({
   soundEnabled,
   onToggleSound,
   onOpenCheatSheet,
-  onOpenTeacherDashboard,
   studentName,
+  studentCourse,
   studentGroup,
   onChangeStudent,
   streak,
 }) => {
   const [isCopied, setIsCopied] = useState(false);
-  const groupLabel = studentGroup === 'repas' ? 'Repàs' : `3r ${studentGroup}`;
+  const courseText = studentCourse || '3r ESO';
+  const groupLabel = studentGroup === 'repas' ? `${courseText} · Repàs` : `${courseText} · ${studentGroup || 'A'}`;
 
   return (
     <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-2xs">
@@ -49,7 +50,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 Àlgebra Pas a Pas
               </h1>
               <p className="text-[11px] text-slate-500">
-                Matemàtiques 3r d'ESO · Catalunya
+                Matemàtiques ESO · Catalunya
               </p>
             </div>
           </div>
@@ -92,15 +93,6 @@ export const Navbar: React.FC<NavbarProps> = ({
             >
               <BookOpen className="w-3.5 h-3.5 text-indigo-600" />
               <span className="hidden sm:inline">Trucs</span>
-            </button>
-
-            <button
-              onClick={onOpenTeacherDashboard}
-              className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors cursor-pointer"
-              title="Panell del Docent (Control de participació)"
-            >
-              <ShieldCheck className="w-3.5 h-3.5 text-indigo-600" />
-              <span className="hidden sm:inline">Docent</span>
             </button>
 
             <button

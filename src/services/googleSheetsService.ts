@@ -5,10 +5,10 @@
 
 import { StudentProfile } from '../types/student';
 
-const GOOGLE_SCRIPT_URL_STORAGE_KEY = 'algebra_3reso_gsheet_url_v1';
+const GOOGLE_SCRIPT_URL_STORAGE_KEY = 'algebra_3reso_gsheet_url_v2';
 
 export const DEFAULT_GOOGLE_SCRIPT_URL =
-  'https://script.google.com/macros/s/AKfycbyuTm65lX-kVj1lF7h3vMBhM9rrsuzacxCWzzZrU-yeUU-PGPpMRohMICUMkKqWQZpMBw/exec';
+  'https://script.google.com/macros/s/AKfycby4EHYpW6kCFP3Ac2iNV87gn4DiIqVhCGo8HZ0n3Zls_0rENoUQqmCnv_oaI6N6JhIT0g/exec';
 
 export interface GoogleSheetEventPayload {
   eventType: 'login' | 'exercise';
@@ -80,6 +80,7 @@ class GoogleSheetsService {
     const payload = {
       studentId: profile.id,
       name: profile.name,
+      course: profile.course || '3r ESO',
       group: profile.group,
       totalSolved: profile.totalSolved,
       correctFirstTry: profile.correctFirstTry,
